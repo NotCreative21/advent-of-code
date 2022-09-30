@@ -18,7 +18,7 @@ fn main() {
                 continue;
             }
             let z = testvec[d].to_digit(2).unwrap();
-            //println!("{} : {:?}", z, testvec);
+            println!("{} : {:?}", z, testvec);
             if z == 0 {
                 x += 1;
             }
@@ -41,5 +41,4 @@ fn main() {
     let a = isize::from_str_radix(&binstr, 2).unwrap();
     let b = isize::from_str_radix(&strbin, 2).unwrap();
     println!("{:?}\n{:?}\n{} * {} = {}", binstr, strbin, a, b, a*b);
-
 }
