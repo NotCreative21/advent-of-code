@@ -1,44 +1,124 @@
-use std::fs::File;
-use std::io::Read;
+use std::{
+    error::Error,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
+};
 
-fn main() {
-    let mut opened = File::open(&"./input").unwrap();
-    let mut contents: String = String::new();
-    opened.read_to_string(&mut contents).unwrap();
-    let vecfirst: Vec<&str> = contents.split("\n").collect();
-    let binlen = vecfirst[0].len();
-    let mut result: Vec<u8> = Vec::new();
-    let mut result2: Vec<u8> = Vec::new();
+fn read_input<P: AsRef<Path>>(path: P) -> Result<String, Box<dyn Error>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    let lines: Result<Vec<String>, _> = reader.lines().collect();
+    Ok(lines?.join("\n"))
+}
 
-    for d in 0..binlen {
-        let (mut x, mut y) = (0, 0);
-        for i in 0..vecfirst.len() {
-            let testvec: Vec<char> = vecfirst[i].chars().collect();
-            if testvec.len() == 0 {
-                continue;
-            }
-            let z = testvec[d].to_digit(2).unwrap();
-            println!("{} : {:?}", z, testvec);
-            if z == 0 {
-                x += 1;
-            }
-            else {
-                y += 1;
-            }
-        } 
-        if x > y {
-            result.push(0);
-            result2.push(1);
-        }
-        else {
-            result.push(1);
-            result2.push(0)
+macro_rules! problem {
+    ($num:expr, $day:ident) => {
+        let input = read_input(format!("inputs/day{}", $num))?;
+        let ans = $day::solve(&input);
+        println!("day {}, part one: {}, part two: {}", $num, ans.0, ans.1);
+    };
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    problem!(1, day1);
+    problem!(2, day2);
+    Ok(())
+}
+
+mod day1 {
+    pub fn solve(input: &str) -> (isize, isize) {
+        let mut values: Vec<isize> = input
+            .split("\n\n")
+            .into_iter()
+            .map(|x| x.split('\n').filter_map(|x| x.parse::<isize>().ok()).sum())
+            .collect();
+        values.sort();
+        (part_one(&values), part_two(&values))
+    }
+
+    #[inline(always)]
+    fn part_one(values: &[isize]) -> isize {
+        *values.last().expect("should be longer than 1 item")
+    }
+
+    #[inline(always)]
+    fn part_two(values: &[isize]) -> isize {
+        values[values.len() - 3..].iter().sum()
+    }
+}
+
+mod day2 {
+    #[inline(always)]
+    fn score(c: char) -> isize {
+        match c {
+            'A' | 'X' => 1, // Rock
+            'B' | 'Y' => 2, // Paper
+            'C' | 'Z' => 3, // Scissors
+            _ => unreachable!(),
         }
     }
 
-    let binstr: String = result.iter().map( |&i| i.to_string() + "").collect();
-    let strbin: String = result2.iter().map( |&i| i.to_string() + "").collect();
-    let a = isize::from_str_radix(&binstr, 2).unwrap();
-    let b = isize::from_str_radix(&strbin, 2).unwrap();
-    println!("{:?}\n{:?}\n{} * {} = {}", binstr, strbin, a, b, a*b);
+    pub fn solve(input: &str) -> (isize, isize) {
+        let (mut one, mut two) = (0, 0);
+        for line in input.lines() {
+            let round: Vec<char> = line.chars().collect();
+            let play = score(round[2]);
+            let op = score(round[0]);
+            one += if play == op {
+                3 + score(round[0])
+            } else {
+                match play {
+                    1 => {
+                        if op == 2 {
+                            play
+                        } else {
+                            play + 6
+                        }
+                    }
+                    2 => {
+                        if op == 1 {
+                            play + 6
+                        } else {
+                            play
+                        }
+                    }
+                    3 => {
+                        if op == 2 {
+                            play + 6
+                        } else {
+                            play
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            };
+            two += if play == 2 {
+                op + 3
+            } else {
+                match play {
+                    1 => {
+                        if op == 3 {
+                            2
+                        } else if op == 2 {
+                            1
+                        } else {
+                            3
+                        }
+                    }
+                    3 => {
+                        if op == 3 {
+                            7
+                        } else if op == 2 {
+                            9
+                        } else {
+                            8
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            };
+        }
+        (one, two)
+    }
 }
