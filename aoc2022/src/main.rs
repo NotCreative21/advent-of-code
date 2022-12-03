@@ -16,13 +16,14 @@ macro_rules! problem {
     ($num:expr, $day:ident) => {
         let input = read_input(format!("inputs/day{}", $num))?;
         let ans = $day::solve(&input);
-        println!("day {}, part one: {}, part two: {}", $num, ans.0, ans.1);
+        println!("day {}, part one: \t{}, \tpart two: \t{}", $num, ans.0, ans.1);
     };
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     problem!(1, day1);
     problem!(2, day2);
+    problem!(3, day3);
     Ok(())
 }
 
@@ -120,5 +121,58 @@ mod day2 {
             };
         }
         (one, two)
+    }
+}
+
+mod day3 {
+
+    macro_rules! char_u8 {
+        ($val:expr) => {
+            $val.chars()
+                .map(|x| {
+                    let x = x as u8;
+                    (if x >= 97 { x - 96 } else { x - 38 }) as isize
+                })
+                .collect()
+        };
+    }
+
+    // messy but works
+    fn part_one(input: &str) -> isize {
+        input
+            .lines()
+            .map(|x| {
+                let first = x.len() / 2;
+                let c1: Vec<isize> = char_u8!(x[..first]);
+                let c2: Vec<isize> = char_u8!(x[first..]);
+                for v in c1 {
+                    if c2.contains(&v) {
+                        return v;
+                    }
+                }
+                0
+            })
+            .sum()
+    }
+
+    fn part_two(input: &str) -> isize {
+        let input: Vec<&str> = input.lines().collect();
+        input
+            .chunks(3)
+            .map(|x| {
+                let c1: Vec<isize> = char_u8!(x[0]);
+                let c2: Vec<isize> = char_u8!(x[1]);
+                let c3: Vec<isize> = char_u8!(x[2]);
+                for v in c1 {
+                    if c2.contains(&v) && c3.contains(&v) {
+                        return v;
+                    }
+                }
+                0
+            })
+            .sum()
+    }
+    pub fn solve(input: &str) -> (isize, isize) {
+        (part_one(input), part_two(input))
     }
 }
