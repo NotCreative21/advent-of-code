@@ -16,7 +16,10 @@ macro_rules! problem {
     ($num:expr, $day:ident) => {
         let input = read_input(format!("inputs/day{}", $num))?;
         let ans = $day::solve(&input);
-        println!("day {}, part one: \t{}, \tpart two: \t{}", $num, ans.0, ans.1);
+        println!(
+            "day {}, part one: \t{}, \tpart two: \t{}",
+            $num, ans.0, ans.1
+        );
     };
 }
 
@@ -24,6 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     problem!(1, day1);
     problem!(2, day2);
     problem!(3, day3);
+    problem!(4, day4);
     Ok(())
 }
 
@@ -171,6 +175,57 @@ mod day3 {
                 0
             })
             .sum()
+    }
+    pub fn solve(input: &str) -> (isize, isize) {
+        (part_one(input), part_two(input))
+    }
+}
+
+mod day4 {
+    macro_rules! to_range {
+        ($val:expr) => {
+            {
+                let ends: Vec<&str> = $val.split('-').collect();
+                let (Some(start), Some(end)) = (ends.first(), ends.last()) else {
+                    unreachable!();
+                };
+                let (Ok(start), Ok(end)): (Result<isize, _>, Result<isize, _>) = (start.parse(),end.parse()) else {
+                    unreachable!();
+                };
+                (start..=end)
+            }
+        };
+    }
+    fn part_one(input: &str) -> isize {
+        input
+            .trim()
+            .lines()
+            .filter(|x| {
+                let x: Vec<&str> = x.split(',').collect();
+                let (Some(l), Some(r)) = (x.first(), x.last()) else {
+                unreachable!();
+            };
+                let l = to_range!(l);
+                let mut r = to_range!(r);
+                l.clone().all(|x| r.clone().contains(&x)) || r.all(|x| l.contains(&x))
+            })
+            .count() as isize
+    }
+    fn part_two(input: &str) -> isize {
+        input
+            .trim()
+            .lines()
+            .filter(|x| {
+                let x: Vec<&str> = x.split(',').collect();
+                let (Some(l), Some(r)) = (x.first(), x.last()) else {
+                unreachable!();
+            };
+                let mut l = to_range!(l);
+                let mut r = to_range!(r);
+                // WHY DOES THIS NOT WORK!!!
+                l.any(|x| r.contains(&x)) || r.any(|x| l.contains(&x))
+            })
+            .count() as isize
     }
     pub fn solve(input: &str) -> (isize, isize) {
         (part_one(input), part_two(input))
