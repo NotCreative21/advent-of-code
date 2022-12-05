@@ -17,7 +17,7 @@ macro_rules! problem {
         let input = read_input(format!("inputs/day{}", $num))?;
         let ans = $day::solve(&input);
         println!(
-            "day {}, part one: \t{}, \tpart two: \t{}",
+            "day {}, part one: \t\t\t{}, \tpart two: \t\t{}",
             $num, ans.0, ans.1
         );
     };
@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     problem!(2, day2);
     problem!(3, day3);
     problem!(4, day4);
+    problem!(5, day5);
     Ok(())
 }
 
@@ -228,6 +229,104 @@ mod day4 {
             .count() as isize
     }
     pub fn solve(input: &str) -> (isize, isize) {
+        (part_one(input), part_two(input))
+    }
+}
+
+mod day5 {
+
+    fn part_one(input: &str) -> String {
+        let mut crate_input = 0;
+        let mut crates = vec![vec![]; 9];
+        let mut data = Vec::new();
+        for (l, line) in input.lines().enumerate() {
+            if line.contains('[') {
+                data.push(line);
+            } else {
+                for e in data.iter_mut() {
+                    for (pos, c) in e.chars().enumerate() {
+                        if c == ' ' || pos == 0 || (pos - 1) % 4 != 0 {
+                            continue;
+                        }
+                        let pos = pos - 1;
+                        let stack = if pos >= 4 { pos / 4 } else { pos };
+                        crates[stack].push(c);
+                    }
+                }
+                crate_input = l;
+                break;
+            }
+        }
+        for (l, line) in input.lines().enumerate() {
+            if line.trim().is_empty() || l <= crate_input {
+                continue;
+            }
+            let line = line
+                .replace("move", "")
+                .replace("from", "")
+                .replace("to", "");
+            let moves: Result<Vec<usize>, _> = line.split_whitespace().map(|x| x.parse()).collect();
+            let moves = moves.expect("fail to parse");
+            unsafe {
+                let mut moved = crates[moves[1] - 1]
+                    .drain(..moves[0])
+                    .collect::<Vec<char>>();
+                let original = &mut (*crates.as_mut_ptr().add(moves[2] - 1));
+                original.reverse();
+                original.append(&mut moved);
+                original.reverse();
+            }
+        }
+        crates.iter().map(|x| x.first().unwrap_or(&' ')).collect()
+    }
+
+    fn part_two(input: &str) -> String {
+        let mut crate_input = 0;
+        let mut crates = vec![vec![]; 9];
+        let mut data = Vec::new();
+        for (l, line) in input.lines().enumerate() {
+            if line.contains('[') {
+                data.push(line);
+            } else {
+                for e in data.iter_mut() {
+                    for (pos, c) in e.chars().enumerate() {
+                        if c == ' ' || pos == 0 || (pos - 1) % 4 != 0 {
+                            continue;
+                        }
+                        let pos = pos - 1;
+                        let stack = if pos >= 4 { pos / 4 } else { pos };
+                        crates[stack].push(c);
+                    }
+                }
+                crate_input = l;
+                break;
+            }
+        }
+        for (l, line) in input.lines().enumerate() {
+            if line.trim().is_empty() || l <= crate_input {
+                continue;
+            }
+            let line = line
+                .replace("move", "")
+                .replace("from", "")
+                .replace("to", "");
+            let moves: Result<Vec<usize>, _> = line.split_whitespace().map(|x| x.parse()).collect();
+            let moves = moves.expect("fail to parse");
+            unsafe {
+                let mut moved = crates[moves[1] - 1]
+                    .drain(..moves[0])
+                    .collect::<Vec<char>>();
+                moved.reverse();
+                let original = &mut (*crates.as_mut_ptr().add(moves[2] - 1));
+                original.reverse();
+                original.append(&mut moved);
+                original.reverse();
+            }
+        }
+        crates.iter().map(|x| x.first().unwrap_or(&' ')).collect()
+    }
+
+    pub fn solve(input: &str) -> (String, String) {
         (part_one(input), part_two(input))
     }
 }
