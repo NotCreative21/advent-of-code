@@ -29,6 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     problem!(3, day3);
     problem!(4, day4);
     problem!(5, day5);
+    problem!(6, day6);
     Ok(())
 }
 
@@ -327,6 +328,50 @@ mod day5 {
     }
 
     pub fn solve(input: &str) -> (String, String) {
+        (part_one(input), part_two(input))
+    }
+}
+
+mod day6 {
+    fn part_one(input: &str) -> isize {
+        let chars: Vec<char> = input.chars().collect();
+        for (i, window) in chars.windows(4).enumerate() {
+            let mut previous = Vec::with_capacity(4);
+            let mut unique = true;
+            for v in window {
+                if previous.contains(v) {
+                    unique = false;
+                    continue;
+                }
+                previous.push(*v);
+            }
+            if unique {
+                return i as isize + 4;
+            }
+        }
+        unreachable!();
+    }
+
+    fn part_two(input: &str) -> isize {
+        let chars: Vec<char> = input.chars().collect();
+        for (i, window) in chars.windows(14).enumerate() {
+            let mut previous = Vec::with_capacity(4);
+            let mut unique = true;
+            for v in window {
+                if previous.contains(v) {
+                    unique = false;
+                    continue;
+                }
+                previous.push(*v);
+            }
+            if unique {
+                return i as isize + 14;
+            }
+        }
+        unreachable!();
+    }
+
+    pub fn solve(input: &str) -> (isize, isize) {
         (part_one(input), part_two(input))
     }
 }
