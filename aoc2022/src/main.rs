@@ -13,23 +13,31 @@ fn read_input<P: AsRef<Path>>(path: P) -> Result<String, Box<dyn Error>> {
 }
 
 macro_rules! problem {
-    ($num:expr, $day:ident) => {
+    ($num:expr, $day:ident) => {{
         let input = read_input(format!("inputs/day{}", $num))?;
         let ans = $day::solve(&input);
-        println!(
+        format!(
             "day {}, part one: \t\t\t{}, \tpart two: \t\t{}",
             $num, ans.0, ans.1
-        );
-    };
+        )
+    }};
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    problem!(1, day1);
-    problem!(2, day2);
-    problem!(3, day3);
-    problem!(4, day4);
-    problem!(5, day5);
-    problem!(6, day6);
+    println!(
+        "{}",
+        vec![
+            problem!(1, day1),
+            problem!(2, day2),
+            problem!(3, day3),
+            problem!(4, day4),
+            problem!(5, day5),
+            problem!(6, day6),
+            problem!(7, day7),
+            problem!(8, day8),
+        ]
+        .join("\n")
+    );
     Ok(())
 }
 
@@ -224,7 +232,6 @@ mod day4 {
             };
                 let mut l = to_range!(l);
                 let mut r = to_range!(r);
-                // WHY DOES THIS NOT WORK!!!
                 l.any(|x| r.contains(&x)) || r.any(|x| l.contains(&x))
             })
             .count() as isize
@@ -373,5 +380,255 @@ mod day6 {
 
     pub fn solve(input: &str) -> (isize, isize) {
         (part_one(input), part_two(input))
+    }
+}
+
+mod day7 {
+    #[derive(Default)]
+    struct Graph {
+        nodes: Vec<NodeData>,
+        edges: Vec<EdgeData>,
+    }
+
+    type NodeIndex = usize;
+    type EdgeIndex = usize;
+
+    struct NodeData {
+        first_outgoing_edge: Option<EdgeIndex>,
+    }
+
+    struct EdgeData {
+        target: NodeIndex,
+        next_outgoing_edge: Option<EdgeIndex>
+    }
+
+    struct Successors<'graph> {
+        graph: &'graph Graph,
+        current_edge_index: Option<EdgeIndex>,
+    }
+
+    impl<'graph> Iterator for Successors<'graph> {
+        type Item = NodeIndex;
+
+        fn next(&mut self) -> Option<NodeIndex> {
+            match self.current_edge_index {
+                None => None,
+                Some(edge_num) => {
+                    let edge = &self.graph.edges[edge_num];
+                    self.current_edge_index = edge.next_outgoing_edge;
+                    Some(edge.target)
+                }
+            }
+        }
+    }
+
+    impl Graph {
+        pub fn add_node(&mut self) -> NodeIndex {
+            let index = self.nodes.len();
+            self.nodes.push(NodeData { first_outgoing_edge: None });
+            index
+        }
+        pub fn add_edge(&mut self, source: NodeIndex, target: NodeIndex) {
+            let edge_index = self.edges.len();
+            let node_data = &mut self.nodes[source];
+            self.edges.push(EdgeData {
+                target,
+                next_outgoing_edge: node_data.first_outgoing_edge
+            });
+            node_data.first_outgoing_edge = Some(edge_index);
+        }
+
+        fn successors(&self, source: NodeIndex) -> Successors {
+            let first_outgoing_edge = self.nodes[source].first_outgoing_edge;
+            Successors { graph: self, current_edge_index: first_outgoing_edge }
+        }
+
+    }
+    // fn traverse_add(tree: &mut Vec<FsObject>, name: &[String], children: &[FsObject]) {
+    //     for v in tree {
+    //         if let FsObject::Directory(v) = v {
+    //             if v.name == name && !children.is_empty() {
+    //                 v.children = children.to_vec();
+    //                 return;
+    //             }
+    //             traverse_add(&mut v.children, name, children);
+    //         }
+    //     }
+    // }
+    //
+    // fn traverse(fs: &Vec<FsObject>, root: bool) -> usize {
+    //     let mut total = 0;
+    //     for v in fs {
+    //         if let FsObject::Directory(v) = v {
+    //             let d = traverse(&v.children, false);
+    //             if root && d <= 100000 {
+    //                 total += d;
+    //             } else {
+    //                 total += traverse(&v.children, false);
+    //             }
+    //         }
+    //         if let FsObject::File(f) = v {
+    //             if root {
+    //                 continue;
+    //             }
+    //             total += f.size;
+    //         }
+    //     }
+    //     total
+    // }
+
+    pub fn solve(input: &str) -> (usize, usize) {
+        let lines: Vec<&str> = input.lines().collect();
+        let mut current_dir: Vec<String> = Vec::new();
+        let mut ls = false;
+        let mut child = Vec::new();
+        let mut fs = Graph::default();
+        for (i, line) in lines.iter().enumerate() {
+            let cmd: Vec<&str> = line.split_whitespace().collect();
+            if line.starts_with('$') || i == lines.len() - 1 {
+                let seg = &line[2..];
+                if seg.starts_with("cd") {
+                    let dir = cmd[2];
+                    if dir == ".." {
+                        current_dir.pop();
+                    } else {
+                        current_dir.push(dir.to_string());
+                        // push
+                    }
+                }
+                ls = seg.starts_with("ls");
+                continue;
+            }
+            if !ls {
+                continue;
+            }
+            let current_dir = current_dir.join("/");
+            // match cmd[0] {
+            //     "dir" => fs.add_edge(current_dir, current_dir + "/" + cmd[1]),
+            //     _ => fs.add_edge(current_dir, line),
+            // };
+        }
+        (0, 0)
+    }
+}
+
+mod day8 {
+    #[inline(always)]
+    fn check(grid: &[Vec<u8>], row: &[u8], r: usize, c: usize, tree: u8) -> bool {
+        let mut vis = true;
+        for i in grid.iter().take(r) {
+            if i[c] >= tree {
+                vis = false;
+            }
+        }
+        if vis {
+            return true;
+        }
+        let mut vis = true;
+        for i in row.iter().take(c) {
+            if *i >= tree {
+                vis = false;
+            }
+        }
+        if vis {
+            return true;
+        }
+        let mut vis = true;
+        for i in row.iter().skip(c + 1) {
+            if *i >= tree {
+                vis = false;
+            }
+        }
+        if vis {
+            return true;
+        }
+        let mut vis = true;
+        for i in grid.iter().take(row.len()).skip(r + 1) {
+            if i[c] >= tree {
+                vis = false;
+            }
+        }
+        if vis {
+            return true;
+        }
+        false
+    }
+    #[inline(always)]
+    fn check_score(grid: &[Vec<u8>], row: &[u8], r: usize, c: usize, tree: u8) -> usize {
+        if r == row.len() - 1 || r == 0 || c == grid.len() - 1 || c == 0 {
+            return 0;
+        }
+        let mut score_up = 0;
+        for i in grid.iter().take(r).rev() {
+            if i[c] >= tree {
+                score_up += 1;
+                break;
+            }
+            if i[c] < tree {
+                score_up += 1;
+            } else {
+                break;
+            }
+        }
+        let mut score_left = 0;
+        for i in row.iter().take(c).rev() {
+            if *i >= tree {
+                score_left += 1;
+                break;
+            }
+            if *i < tree {
+                score_left += 1;
+            } else {
+                break;
+            }
+        }
+        let mut score_right = 0;
+        for i in row.iter().skip(c + 1) {
+            if *i >= tree {
+                score_right += 1;
+                break;
+            }
+            if *i < tree {
+                score_right += 1;
+            } else {
+                break;
+            }
+        }
+        let mut score_down = 0;
+        for i in grid.iter().skip(r + 1).take(row.len()) {
+            if i[c] >= tree {
+                score_down += 1;
+                break;
+            }
+            if i[c] < tree {
+                score_down += 1;
+            } else {
+                break;
+            }
+        }
+        score_up * score_left * score_right * score_down
+    }
+    pub fn solve(input: &str) -> (usize, usize) {
+        let grid: Vec<Vec<u8>> = input
+            .lines()
+            .map(|x| {
+                x.chars()
+                    .map(|x| x.to_digit(10).unwrap() as u8)
+                    .collect::<Vec<u8>>()
+            })
+            .collect();
+        let mut visible = 0;
+        let mut tree_score = vec![];
+        for (r, row) in grid.iter().enumerate() {
+            for (c, tree) in row.iter().enumerate() {
+                if check(&grid, row, r, c, *tree) {
+                    visible += 1;
+                }
+                let score = check_score(&grid, row, r, c, *tree);
+                tree_score.push(score);
+            }
+        }
+        tree_score.sort();
+        (visible, *tree_score.last().unwrap())
     }
 }
